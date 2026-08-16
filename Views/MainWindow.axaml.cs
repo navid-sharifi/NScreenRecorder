@@ -14,10 +14,19 @@ public partial class MainWindow : Window
 
     private async void OnSelectAreaClick(object? sender, RoutedEventArgs e)
     {
+        if (DataContext is not MainViewModel vm) return;
+
+        // Hide this options window to let user see the screen clearly during selection
+        Hide();
+        await Task.Delay(250);
+
         var selectionWindow = new RegionSelectionWindow();
         await selectionWindow.ShowDialog(this);
 
-        if (selectionWindow.SelectedRegion.HasValue && DataContext is MainViewModel vm)
+        Show();
+        Activate();
+
+        if (selectionWindow.SelectedRegion.HasValue)
         {
             var region = selectionWindow.SelectedRegion.Value;
             vm.Settings.RegionLeft = region.X;

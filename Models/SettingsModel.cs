@@ -13,6 +13,18 @@ namespace ScreenRecorder.Models
         private string _screenshotHotkey = "Alt+D";
 
         [ObservableProperty]
+        private string _voiceRecordHotkey = "Alt+V";
+
+        [ObservableProperty]
+        private int _audioSource = 0; // 0 = Device and Microphone, 1 = Device Only, 2 = Microphone Only
+
+        [ObservableProperty]
+        private int _voiceFormat = 1; // 0 = MP4, 1 = M4A
+
+        [ObservableProperty]
+        private int _voiceQuality = 3; // 0=96kbps, 1=128kbps, 2=160kbps, 3=192kbps, 4=256kbps, 5=320kbps
+
+        [ObservableProperty]
         private int _fps = 30;
 
         [ObservableProperty]

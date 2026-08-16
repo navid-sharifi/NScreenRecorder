@@ -60,6 +60,7 @@ namespace ScreenRecorder.Services
 
         private const int RECORD_HOTKEY_ID = 9000;
         private const int SCREENSHOT_HOTKEY_ID = 9001;
+        private const int VOICE_RECORD_HOTKEY_ID = 9002;
 
         /// <summary>Raised when the recording hotkey (default Alt+S) is pressed.</summary>
         public event EventHandler? RecordHotkeyPressed;
@@ -67,23 +68,28 @@ namespace ScreenRecorder.Services
         /// <summary>Raised when the screenshot hotkey (default Alt+D) is pressed.</summary>
         public event EventHandler? ScreenshotHotkeyPressed;
 
+        /// <summary>Raised when the voice recording hotkey (default Alt+V) is pressed.</summary>
+        public event EventHandler? VoiceRecordHotkeyPressed;
+
         private readonly object _sync = new();
         private readonly ManualResetEventSlim _threadReady = new(false);
         private Thread? _hotkeyThread;
         private uint _hotkeyThreadId;
         private string _recordHotkey = string.Empty;
         private string _screenshotHotkey = string.Empty;
+        private string _voiceRecordHotkey = string.Empty;
 
         /// <summary>
-        /// Registers (or re-registers) both global hotkeys. Safe to call repeatedly; the
+        /// Registers (or re-registers) global hotkeys. Safe to call repeatedly; the
         /// underlying message loop thread is created once and reused.
         /// </summary>
-        public void RegisterHotkeys(string recordHotkey, string screenshotHotkey)
+        public void RegisterHotkeys(string recordHotkey, string screenshotHotkey, string voiceRecordHotkey)
         {
             lock (_sync)
             {
                 _recordHotkey = recordHotkey ?? string.Empty;
                 _screenshotHotkey = screenshotHotkey ?? string.Empty;
+                _voiceRecordHotkey = voiceRecordHotkey ?? string.Empty;
 
                 if (_hotkeyThread == null || !_hotkeyThread.IsAlive)
                 {
@@ -133,25 +139,32 @@ namespace ScreenRecorder.Services
                     {
                         Dispatcher.UIThread.Post(() => ScreenshotHotkeyPressed?.Invoke(this, EventArgs.Empty));
                     }
+                    else if (id == VOICE_RECORD_HOTKEY_ID)
+                    {
+                        Dispatcher.UIThread.Post(() => VoiceRecordHotkeyPressed?.Invoke(this, EventArgs.Empty));
+                    }
                 }
             }
 
             UnregisterHotKey(IntPtr.Zero, RECORD_HOTKEY_ID);
             UnregisterHotKey(IntPtr.Zero, SCREENSHOT_HOTKEY_ID);
+            UnregisterHotKey(IntPtr.Zero, VOICE_RECORD_HOTKEY_ID);
             _threadReady.Reset();
         }
 
         private void ApplyRegistrations()
         {
-            string record, screenshot;
+            string record, screenshot, voice;
             lock (_sync)
             {
                 record = _recordHotkey;
                 screenshot = _screenshotHotkey;
+                voice = _voiceRecordHotkey;
             }
 
             UnregisterHotKey(IntPtr.Zero, RECORD_HOTKEY_ID);
             UnregisterHotKey(IntPtr.Zero, SCREENSHOT_HOTKEY_ID);
+            UnregisterHotKey(IntPtr.Zero, VOICE_RECORD_HOTKEY_ID);
 
             bool hasRecord = TryParseHotkey(record, out uint recordModifiers, out uint recordKey);
             if (hasRecord)
@@ -159,13 +172,25 @@ namespace ScreenRecorder.Services
                 RegisterHotKey(IntPtr.Zero, RECORD_HOTKEY_ID, recordModifiers | MOD_NOREPEAT, recordKey);
             }
 
-            if (TryParseHotkey(screenshot, out uint shotModifiers, out uint shotKey))
+            bool hasScreenshot = TryParseHotkey(screenshot, out uint shotModifiers, out uint shotKey);
+            if (hasScreenshot)
             {
                 // Ignore a screenshot hotkey that collides with the recording one.
                 bool collides = hasRecord && shotModifiers == recordModifiers && shotKey == recordKey;
                 if (!collides)
                 {
                     RegisterHotKey(IntPtr.Zero, SCREENSHOT_HOTKEY_ID, shotModifiers | MOD_NOREPEAT, shotKey);
+                }
+            }
+
+            if (TryParseHotkey(voice, out uint voiceModifiers, out uint voiceKey))
+            {
+                // Ignore a voice recording hotkey that collides with existing ones.
+                bool collidesWithRecord = hasRecord && voiceModifiers == recordModifiers && voiceKey == recordKey;
+                bool collidesWithScreenshot = hasScreenshot && voiceModifiers == shotModifiers && voiceKey == shotKey;
+                if (!collidesWithRecord && !collidesWithScreenshot)
+                {
+                    RegisterHotKey(IntPtr.Zero, VOICE_RECORD_HOTKEY_ID, voiceModifiers | MOD_NOREPEAT, voiceKey);
                 }
             }
         }

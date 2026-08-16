@@ -32,7 +32,8 @@ public partial class App : Application
             
             hotkeyService.RegisterHotkeys(
                 settingsService.CurrentSettings.Hotkey,
-                settingsService.CurrentSettings.ScreenshotHotkey);
+                settingsService.CurrentSettings.ScreenshotHotkey,
+                settingsService.CurrentSettings.VoiceRecordHotkey);
 
             recorderService.RecordingStarted += OnRecordingStarted;
             recorderService.RecordingStopped += OnRecordingStopped;

@@ -15,11 +15,14 @@ namespace ScreenRecorder.Services
         public event EventHandler? RecordingStopped;
         public event EventHandler<string>? RecordingFailed;
 
-        public void StartRecording(SettingsModel settings)
+        public void StartRecording(SettingsModel settings, bool isAudioOnly = false)
         {
             if (IsRecording) return;
 
-            string fileName = $"Record_{DateTime.Now:yyyyMMdd_HHmmss}.mp4";
+            string extension = settings.VoiceFormat == 0 ? "mp4" : "m4a";
+            string fileName = isAudioOnly 
+                ? $"VoiceRecord_{DateTime.Now:yyyyMMdd_HHmmss}.{extension}"
+                : $"Record_{DateTime.Now:yyyyMMdd_HHmmss}.mp4";
             string filePath = Path.Combine(settings.OutputPath, fileName);
             LastRecordedFilePath = filePath;
 
@@ -27,6 +30,15 @@ namespace ScreenRecorder.Services
             {
                 Directory.CreateDirectory(settings.OutputPath);
             }
+
+            AudioBitrate bitrate = settings.VoiceQuality switch
+            {
+                0 => AudioBitrate.bitrate_96kbps,
+                1 => AudioBitrate.bitrate_128kbps,
+                2 => AudioBitrate.bitrate_160kbps,
+                3 => AudioBitrate.bitrate_192kbps,
+                _ => AudioBitrate.bitrate_192kbps
+            };
 
             RecorderOptions options = new RecorderOptions
             {
@@ -36,8 +48,8 @@ namespace ScreenRecorder.Services
                 },
                 VideoEncoderOptions = new VideoEncoderOptions
                 {
-                    Framerate = settings.Fps,
-                    Quality = settings.Quality,
+                    Framerate = isAudioOnly ? 5 : settings.Fps,
+                    Quality = isAudioOnly ? 10 : settings.Quality,
                     Encoder = new H264VideoEncoder
                     {
                         BitrateMode = H264BitrateControlMode.Quality,
@@ -46,13 +58,18 @@ namespace ScreenRecorder.Services
                 },
                 AudioOptions = new AudioOptions
                 {
-                    IsAudioEnabled = settings.RecordSystemSound || settings.RecordMicrophone,
-                    IsOutputDeviceEnabled = settings.RecordSystemSound,
-                    IsInputDeviceEnabled = settings.RecordMicrophone
+                    IsAudioEnabled = isAudioOnly ? true : (settings.RecordSystemSound || settings.RecordMicrophone),
+                    IsOutputDeviceEnabled = isAudioOnly 
+                        ? (settings.AudioSource == 0 || settings.AudioSource == 1) 
+                        : settings.RecordSystemSound,
+                    IsInputDeviceEnabled = isAudioOnly 
+                        ? (settings.AudioSource == 0 || settings.AudioSource == 2) 
+                        : settings.RecordMicrophone,
+                    Bitrate = isAudioOnly ? bitrate : AudioBitrate.bitrate_128kbps
                 },
                 MouseOptions = new MouseOptions
                 {
-                    IsMousePointerEnabled = true
+                    IsMousePointerEnabled = !isAudioOnly
                 }
             };
 

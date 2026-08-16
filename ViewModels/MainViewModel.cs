@@ -35,11 +35,33 @@ public partial class MainViewModel : ViewModelBase
 
         _hotkeyService.RecordHotkeyPressed += OnRecordHotkeyPressed;
         _hotkeyService.ScreenshotHotkeyPressed += OnScreenshotHotkeyPressed;
-        _recorderService.RecordingStarted += (s, e) => StatusMessage = "Recording Started...";
+        _hotkeyService.VoiceRecordHotkeyPressed += OnVoiceRecordHotkeyPressed;
+        
+        _recorderService.RecordingStarted += (s, e) =>
+        {
+            var filePath = _recorderService.LastRecordedFilePath;
+            if (filePath != null && filePath.Contains("VoiceRecord_", System.StringComparison.OrdinalIgnoreCase))
+            {
+                StatusMessage = "Voice Recording Started...";
+            }
+            else
+            {
+                StatusMessage = "Recording Started...";
+            }
+        };
+
         _recorderService.RecordingStopped += (s, e) =>
         {
-            StatusMessage = "Recording Stopped.";
             var filePath = _recorderService.LastRecordedFilePath;
+            if (filePath != null && filePath.Contains("VoiceRecord_", System.StringComparison.OrdinalIgnoreCase))
+            {
+                StatusMessage = "Voice Recording Stopped.";
+            }
+            else
+            {
+                StatusMessage = "Recording Stopped.";
+            }
+
             if (!string.IsNullOrEmpty(filePath))
             {
                 Avalonia.Threading.Dispatcher.UIThread.Post(() =>
@@ -110,6 +132,11 @@ public partial class MainViewModel : ViewModelBase
         CaptureScreenshot();
     }
 
+    private void OnVoiceRecordHotkeyPressed(object? sender, System.EventArgs e)
+    {
+        ToggleVoiceRecording();
+    }
+
     /// <summary>
     /// Grabs the screen without showing anything, so callers can hide their own window
     /// first and open the editor afterwards.
@@ -159,10 +186,23 @@ public partial class MainViewModel : ViewModelBase
     }
 
     [RelayCommand]
+    public void ToggleVoiceRecording()
+    {
+        if (_recorderService.IsRecording)
+        {
+            _recorderService.StopRecording();
+        }
+        else
+        {
+            _recorderService.StartRecording(Settings, isAudioOnly: true);
+        }
+    }
+
+    [RelayCommand]
     public void SaveSettings()
     {
         _settingsService.Save();
-        _hotkeyService.RegisterHotkeys(Settings.Hotkey, Settings.ScreenshotHotkey);
+        _hotkeyService.RegisterHotkeys(Settings.Hotkey, Settings.ScreenshotHotkey, Settings.VoiceRecordHotkey);
         ApplyStartupSetting();
     }
 }

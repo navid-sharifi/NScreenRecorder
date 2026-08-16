@@ -21,58 +21,110 @@
             
             <TextBlock Text="{Binding StatusMessage}" Foreground="Red" FontWeight="SemiBold" />
 
-            <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto" ColumnDefinitions="Auto,*">
-                <!-- Hotkey -->
-                <TextBlock Text="Hotkey:" Grid.Row="0" Grid.Column="0" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                <TextBox Text="{Binding Settings.Hotkey}" Grid.Row="0" Grid.Column="1" Margin="0,5" />
+            <TabControl>
+                <!-- Tab 1: Screen Recording -->
+                <TabItem Header="Screen Recording">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <StackPanel Spacing="15" Margin="0,10,0,0">
+                            <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto" ColumnDefinitions="Auto,*">
+                                <!-- Hotkey -->
+                                <TextBlock Text="Hotkey:" Grid.Row="0" Grid.Column="0" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                <TextBox Text="{Binding Settings.Hotkey}" Grid.Row="0" Grid.Column="1" Margin="0,5" />
 
-                <!-- FPS -->
-                <TextBlock Text="FPS:" Grid.Row="1" Grid.Column="0" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                <ComboBox ItemsSource="{Binding AvailableFps}" SelectedItem="{Binding Settings.Fps}" Grid.Row="1" Grid.Column="1" Margin="0,5" HorizontalAlignment="Stretch"/>
+                                <!-- FPS -->
+                                <TextBlock Text="FPS:" Grid.Row="1" Grid.Column="0" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                <ComboBox ItemsSource="{Binding AvailableFps}" SelectedItem="{Binding Settings.Fps}" Grid.Row="1" Grid.Column="1" Margin="0,5" HorizontalAlignment="Stretch"/>
 
-                <!-- Quality -->
-                <TextBlock Text="Quality:" Grid.Row="2" Grid.Column="0" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                <StackPanel Orientation="Horizontal" Grid.Row="2" Grid.Column="1" Margin="0,5" Spacing="10">
-                    <Slider Minimum="10" Maximum="100" Value="{Binding Settings.Quality}" Width="150" />
-                    <TextBlock Text="{Binding Settings.Quality, StringFormat=\{0\}%}" VerticalAlignment="Center"/>
-                </StackPanel>
+                                <!-- Quality -->
+                                <TextBlock Text="Quality:" Grid.Row="2" Grid.Column="0" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                <StackPanel Orientation="Horizontal" Grid.Row="2" Grid.Column="1" Margin="0,5" Spacing="10">
+                                    <Slider Minimum="10" Maximum="100" Value="{Binding Settings.Quality}" Width="150" />
+                                    <TextBlock Text="{Binding Settings.Quality, StringFormat=\{0\}%}" VerticalAlignment="Center"/>
+                                </StackPanel>
 
-                <!-- Output Path -->
-                <TextBlock Text="Output Path:" Grid.Row="3" Grid.Column="0" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                <TextBox Text="{Binding Settings.OutputPath}" Grid.Row="3" Grid.Column="1" Margin="0,5" />
+                                <!-- Output Path -->
+                                <TextBlock Text="Output Path:" Grid.Row="3" Grid.Column="0" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                <TextBox Text="{Binding Settings.OutputPath}" Grid.Row="3" Grid.Column="1" Margin="0,5" />
 
-                <!-- Start on Startup -->
-                <TextBlock Text="Start on Startup:" Grid.Row="4" Grid.Column="0" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                <CheckBox IsChecked="{Binding Settings.StartOnStartup}" Grid.Row="4" Grid.Column="1" Margin="0,5" />
-            </Grid>
+                                <!-- Start on Startup -->
+                                <TextBlock Text="Start on Startup:" Grid.Row="4" Grid.Column="0" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                <CheckBox IsChecked="{Binding Settings.StartOnStartup}" Grid.Row="4" Grid.Column="1" Margin="0,5" />
+                            </Grid>
 
-            <TextBlock Text="Audio Settings" FontWeight="SemiBold" Margin="0,10,0,0"/>
-            <StackPanel Spacing="10">
-                <CheckBox Content="Record Device (System) Sound" IsChecked="{Binding Settings.RecordSystemSound}" />
-                <CheckBox Content="Record Microphone Sound" IsChecked="{Binding Settings.RecordMicrophone}" />
-            </StackPanel>
+                            <TextBlock Text="Audio Settings" FontWeight="SemiBold" Margin="0,10,0,0"/>
+                            <StackPanel Spacing="10">
+                                <CheckBox Content="Record Device (System) Sound" IsChecked="{Binding Settings.RecordSystemSound}" />
+                                <CheckBox Content="Record Microphone Sound" IsChecked="{Binding Settings.RecordMicrophone}" />
+                            </StackPanel>
 
-            <TextBlock Text="Recording Area" FontWeight="SemiBold" Margin="0,10,0,0"/>
-            <StackPanel Spacing="10">
-                <RadioButton Content="Full Screen" IsChecked="{Binding Settings.IsFullScreen}" />
-                <RadioButton Content="Target Area" IsChecked="{Binding !Settings.IsFullScreen}" />
-                <Button Content="Select Target Area" 
-                        IsEnabled="{Binding !Settings.IsFullScreen}" 
-                        Click="OnSelectAreaClick" 
-                        HorizontalAlignment="Left" />
-                <TextBlock Text="{Binding Settings.RegionLeft, StringFormat='Region: X:{0}'}" FontSize="12" Foreground="Gray" />
-            </StackPanel>
+                            <TextBlock Text="Recording Area" FontWeight="SemiBold" Margin="0,10,0,0"/>
+                            <StackPanel Spacing="10">
+                                <RadioButton Content="Full Screen" IsChecked="{Binding Settings.IsFullScreen}" />
+                                <RadioButton Content="Target Area" IsChecked="{Binding !Settings.IsFullScreen}" />
+                                <Button Content="Select Target Area" 
+                                        IsEnabled="{Binding !Settings.IsFullScreen}" 
+                                        Click="OnSelectAreaClick" 
+                                        HorizontalAlignment="Left" />
+                                <TextBlock Text="{Binding Settings.RegionLeft, StringFormat='Region: X:{0}'}" FontSize="12" Foreground="Gray" />
+                            </StackPanel>
+                        </StackPanel>
+                    </ScrollViewer>
+                </TabItem>
 
-            <TextBlock Text="Screenshot" FontWeight="SemiBold" Margin="0,10,0,0"/>
-            <StackPanel Spacing="10">
-                <Grid ColumnDefinitions="Auto,*">
-                    <TextBlock Text="Screenshot Hotkey:" Grid.Column="0" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                    <TextBox Text="{Binding Settings.ScreenshotHotkey}" Grid.Column="1" PlaceholderText="Alt+D" />
-                </Grid>
-                <TextBlock Text="Default: Alt+D. Pressing it captures the screen at full resolution and opens the editor, where you can crop, copy or save the image."
-                           FontSize="12" Foreground="Gray" TextWrapping="Wrap" />
-                <Button Content="Take Screenshot Now" Click="OnTakeScreenshotClick" HorizontalAlignment="Left" />
-            </StackPanel>
+                <!-- Tab 2: Voice Recording -->
+                <TabItem Header="Voice Recording">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <StackPanel Spacing="15" Margin="0,10,0,0">
+                            <Grid RowDefinitions="Auto,Auto,Auto,Auto" ColumnDefinitions="Auto,*">
+                                <!-- Voice Hotkey -->
+                                <TextBlock Text="Voice Hotkey:" Grid.Row="0" Grid.Column="0" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                <TextBox Text="{Binding Settings.VoiceRecordHotkey}" Grid.Row="0" Grid.Column="1" Margin="0,5" PlaceholderText="Alt+V" />
+
+                                <!-- Audio Source Option -->
+                                <TextBlock Text="Audio Source:" Grid.Row="1" Grid.Column="0" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                <ComboBox SelectedIndex="{Binding Settings.AudioSource}" Grid.Row="1" Grid.Column="1" Margin="0,5" HorizontalAlignment="Stretch">
+                                    <ComboBoxItem Content="Device and Microphone" />
+                                    <ComboBoxItem Content="Device Only" />
+                                    <ComboBoxItem Content="Microphone Only" />
+                                </ComboBox>
+
+                                <!-- Format Option -->
+                                <TextBlock Text="Format:" Grid.Row="2" Grid.Column="0" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                <ComboBox SelectedIndex="{Binding Settings.VoiceFormat}" Grid.Row="2" Grid.Column="1" Margin="0,5" HorizontalAlignment="Stretch">
+                                    <ComboBoxItem Content="MP4" />
+                                    <ComboBoxItem Content="M4A" />
+                                </ComboBox>
+
+                                <!-- Quality Option -->
+                                <TextBlock Text="Quality:" Grid.Row="3" Grid.Column="0" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                <ComboBox SelectedIndex="{Binding Settings.VoiceQuality}" Grid.Row="3" Grid.Column="1" Margin="0,5" HorizontalAlignment="Stretch">
+                                    <ComboBoxItem Content="96 kbps (Lowest)" />
+                                    <ComboBoxItem Content="128 kbps" />
+                                    <ComboBoxItem Content="160 kbps" />
+                                    <ComboBoxItem Content="192 kbps (Highest)" />
+                                </ComboBox>
+                            </Grid>
+                            <TextBlock Text="Default: Alt+V. Pressing it starts or stops voice recording."
+                                       FontSize="12" Foreground="Gray" TextWrapping="Wrap" />
+                        </StackPanel>
+                    </ScrollViewer>
+                </TabItem>
+
+                <!-- Tab 3: Screenshot -->
+                <TabItem Header="Screenshot">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <StackPanel Spacing="15" Margin="0,10,0,0">
+                            <Grid ColumnDefinitions="Auto,*">
+                                <TextBlock Text="Screenshot Hotkey:" Grid.Column="0" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                <TextBox Text="{Binding Settings.ScreenshotHotkey}" Grid.Column="1" PlaceholderText="Alt+D" />
+                            </Grid>
+                            <TextBlock Text="Default: Alt+D. Pressing it captures the screen at full resolution and opens the editor, where you can crop, copy or save the image."
+                                       FontSize="12" Foreground="Gray" TextWrapping="Wrap" />
+                            <Button Content="Take Screenshot Now" Click="OnTakeScreenshotClick" HorizontalAlignment="Left" />
+                        </StackPanel>
+                    </ScrollViewer>
+                </TabItem>
+            </TabControl>
         </StackPanel>
     </ScrollViewer>
 </Window>
