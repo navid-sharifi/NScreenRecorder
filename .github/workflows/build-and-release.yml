@@ -1,0 +1,57 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: 'Tag name for the release (e.g. v1.0.0)'
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+          include-prerelease: true
+
+      - name: Restore Dependencies
+        run: dotnet restore ScreenRecorder.csproj
+
+      - name: Publish Application
+        run: |
+          dotnet publish ScreenRecorder.csproj `
+            -c Release `
+            -r win-x64 `
+            --self-contained true `
+            -o ./publish
+
+      - name: Zip Artifacts
+        shell: pwsh
+        run: |
+          Compress-Archive -Path ./publish/* -DestinationPath ScreenRecorder-win-x64.zip
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
+        with:
+          tag_name: ${{ inputs.tag_name || github.ref_name }}
+          files: ScreenRecorder-win-x64.zip
+          generate_release_notes: true
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
