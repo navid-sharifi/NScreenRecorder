@@ -88,6 +88,7 @@ public partial class App : Application
     {
         if (_mainWindow != null)
         {
+            _mainWindow.Hide();
             _mainWindow.Show();
             _mainWindow.WindowState = Avalonia.Controls.WindowState.Normal;
             _mainWindow.Activate();

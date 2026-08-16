@@ -30,6 +30,7 @@ public partial class MainViewModel : ViewModelBase
 
         AvailableFps = new ObservableCollection<int>(Enumerable.Range(5, 56));
         _settings = _settingsService.CurrentSettings;
+        _settings.PropertyChanged += OnSettingsPropertyChanged;
 
         _hotkeyService.HotkeyPressed += OnHotkeyPressed;
         _recorderService.RecordingStarted += (s, e) => StatusMessage = "Recording Started...";
@@ -59,6 +60,12 @@ public partial class MainViewModel : ViewModelBase
         _recorderService = new RecorderService();
         AvailableFps = new ObservableCollection<int>(Enumerable.Range(5, 56));
         _settings = _settingsService.CurrentSettings;
+        _settings.PropertyChanged += OnSettingsPropertyChanged;
+    }
+
+    private void OnSettingsPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        SaveSettings();
     }
 
     private void ApplyStartupSetting()
