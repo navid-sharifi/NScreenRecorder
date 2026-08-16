@@ -1,0 +1,22 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="ScreenRecorder.Views.RegionSelectionWindow"
+        Title="Select Recording Area"
+        Background="#80000000"
+        TransparencyLevelHint="Transparent"
+        SystemDecorations="None"
+        WindowState="FullScreen"
+        Topmost="True"
+        Cursor="Cross"
+        PointerPressed="OnPointerPressed"
+        PointerMoved="OnPointerMoved"
+        PointerReleased="OnPointerReleased">
+    
+    <Canvas x:Name="SelectionCanvas">
+        <Rectangle x:Name="SelectionRectangle" 
+                   Stroke="#0078D4" 
+                   StrokeThickness="2" 
+                   Fill="#200078D4" 
+                   IsVisible="False" />
+    </Canvas>
+</Window>
