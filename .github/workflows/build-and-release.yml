@@ -45,10 +45,11 @@ jobs:
             --self-contained true `
             -o ./publish
 
-      - name: Zip Artifacts
-        shell: pwsh
-        run: |
-          Compress-Archive -Path ./publish/* -DestinationPath ScreenRecorder-win-x64.zip
+      - name: Install Inno Setup
+        run: choco install innosetup -y
+
+      - name: Compile Windows Installer
+        run: iscc setup.iss
 
       - name: Prepare Release Info
         id: prep
@@ -98,7 +99,7 @@ jobs:
           tag_name: ${{ steps.prep.outputs.tag_name }}
           name: ${{ steps.prep.outputs.release_name }}
           prerelease: ${{ steps.prep.outputs.prerelease == 'true' }}
-          files: ScreenRecorder-win-x64.zip
+          files: ScreenRecorderSetup.exe
           generate_release_notes: true
           draft: false
           make_latest: ${{ steps.prep.outputs.prerelease == 'false' }}
