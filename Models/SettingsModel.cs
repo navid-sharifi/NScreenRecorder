@@ -22,6 +22,9 @@ namespace ScreenRecorder.Models
         private bool _isFullScreen = true;
 
         [ObservableProperty]
+        private bool _startOnStartup = false;
+
+        [ObservableProperty]
         private int _regionLeft = 0;
 
         [ObservableProperty]

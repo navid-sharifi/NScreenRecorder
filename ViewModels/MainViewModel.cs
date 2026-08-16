@@ -47,6 +47,9 @@ public partial class MainViewModel : ViewModelBase
             }
         };
         _recorderService.RecordingFailed += (s, err) => StatusMessage = $"Recording Failed: {err}";
+
+        // Synchronize registry startup setting on startup
+        ApplyStartupSetting();
     }
 
     public MainViewModel()
@@ -56,6 +59,36 @@ public partial class MainViewModel : ViewModelBase
         _recorderService = new RecorderService();
         AvailableFps = new ObservableCollection<int>(Enumerable.Range(5, 56));
         _settings = _settingsService.CurrentSettings;
+    }
+
+    private void ApplyStartupSetting()
+    {
+        if (System.OperatingSystem.IsWindows())
+        {
+            try
+            {
+                using var key = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Run", true);
+                if (key != null)
+                {
+                    if (Settings.StartOnStartup)
+                    {
+                        string? exePath = System.Environment.ProcessPath;
+                        if (!string.IsNullOrEmpty(exePath))
+                        {
+                            key.SetValue("ScreenRecorder", exePath);
+                        }
+                    }
+                    else
+                    {
+                        key.DeleteValue("ScreenRecorder", false);
+                    }
+                }
+            }
+            catch (System.Exception ex)
+            {
+                StatusMessage = $"Startup registry update failed: {ex.Message}";
+            }
+        }
     }
 
     private void OnHotkeyPressed(object? sender, System.EventArgs e)
@@ -81,5 +114,6 @@ public partial class MainViewModel : ViewModelBase
     {
         _settingsService.Save();
         _hotkeyService.RegisterHotkey(Settings.Hotkey);
+        ApplyStartupSetting();
     }
 }

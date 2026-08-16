@@ -39,6 +39,10 @@
             <!-- Output Path -->
             <TextBlock Text="Output Path:" Grid.Row="3" Grid.Column="0" VerticalAlignment="Center" Margin="0,0,10,0"/>
             <TextBox Text="{Binding Settings.OutputPath}" Grid.Row="3" Grid.Column="1" Margin="0,5" />
+
+            <!-- Start on Startup -->
+            <TextBlock Text="Start on Startup:" Grid.Row="4" Grid.Column="0" VerticalAlignment="Center" Margin="0,0,10,0"/>
+            <CheckBox IsChecked="{Binding Settings.StartOnStartup}" Grid.Row="4" Grid.Column="1" Margin="0,5" />
         </Grid>
 
         <TextBlock Text="Recording Area" FontWeight="SemiBold" Margin="0,10,0,0"/>
