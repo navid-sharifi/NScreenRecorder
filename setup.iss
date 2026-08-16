@@ -1,4 +1,5 @@
 [Setup]
+AppId={{74B81A6E-7288-44A7-949B-510B5E0D064F}}
 AppName=Screen Recorder
 AppVersion=1.0.0
 DefaultDirName={autopf}\Screen Recorder
@@ -11,6 +12,7 @@ OutputDir=.
 OutputBaseFilename=ScreenRecorderSetup
 ArchitecturesAllowed=x64
 ArchitecturesInstallIn64BitMode=x64
+CloseApplications=yes
 
 [Files]
 Source: "publish\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs

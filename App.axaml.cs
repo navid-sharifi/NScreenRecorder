@@ -32,6 +32,9 @@ public partial class App : Application
             
             hotkeyService.RegisterHotkey(settingsService.CurrentSettings.Hotkey);
 
+            recorderService.RecordingStarted += OnRecordingStarted;
+            recorderService.RecordingStopped += OnRecordingStopped;
+
             _mainWindow = new MainWindow
             {
                 DataContext = _mainViewModel
@@ -42,6 +45,43 @@ public partial class App : Application
         }
 
         base.OnFrameworkInitializationCompleted();
+    }
+
+    private void OnRecordingStarted(object? sender, EventArgs e)
+    {
+        UpdateAppIcon("recording-logo.ico");
+    }
+
+    private void OnRecordingStopped(object? sender, EventArgs e)
+    {
+        UpdateAppIcon("avalonia-logo.ico");
+    }
+
+    private void UpdateAppIcon(string assetName)
+    {
+        Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+        {
+            try
+            {
+                using var stream = Avalonia.Platform.AssetLoader.Open(new Uri($"avares://ScreenRecorder/Assets/{assetName}"));
+                var icon = new Avalonia.Controls.WindowIcon(stream);
+
+                if (_mainWindow != null)
+                {
+                    _mainWindow.Icon = icon;
+                }
+
+                var trayIcons = Avalonia.Controls.TrayIcon.GetIcons(this);
+                if (trayIcons != null && trayIcons.Count > 0)
+                {
+                    trayIcons[0].Icon = icon;
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Failed to update application icon to {assetName}: {ex.Message}");
+            }
+        });
     }
 
     private void OnOptionsClicked(object? sender, EventArgs e)

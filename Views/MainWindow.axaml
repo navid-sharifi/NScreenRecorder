@@ -45,6 +45,12 @@
             <CheckBox IsChecked="{Binding Settings.StartOnStartup}" Grid.Row="4" Grid.Column="1" Margin="0,5" />
         </Grid>
 
+        <TextBlock Text="Audio Settings" FontWeight="SemiBold" Margin="0,10,0,0"/>
+        <StackPanel Spacing="10">
+            <CheckBox Content="Record Device (System) Sound" IsChecked="{Binding Settings.RecordSystemSound}" />
+            <CheckBox Content="Record Microphone Sound" IsChecked="{Binding Settings.RecordMicrophone}" />
+        </StackPanel>
+
         <TextBlock Text="Recording Area" FontWeight="SemiBold" Margin="0,10,0,0"/>
         <StackPanel Spacing="10">
             <RadioButton Content="Full Screen" IsChecked="{Binding Settings.IsFullScreen}" />

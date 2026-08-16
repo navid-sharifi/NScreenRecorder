@@ -25,6 +25,12 @@ namespace ScreenRecorder.Models
         private bool _startOnStartup = false;
 
         [ObservableProperty]
+        private bool _recordSystemSound = true;
+
+        [ObservableProperty]
+        private bool _recordMicrophone = true;
+
+        [ObservableProperty]
         private int _regionLeft = 0;
 
         [ObservableProperty]

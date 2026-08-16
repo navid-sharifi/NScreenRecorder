@@ -37,7 +37,18 @@ namespace ScreenRecorder.Services
                 VideoEncoderOptions = new VideoEncoderOptions
                 {
                     Framerate = settings.Fps,
-                    Bitrate = settings.Quality * 100000
+                    Quality = settings.Quality,
+                    Encoder = new H264VideoEncoder
+                    {
+                        BitrateMode = H264BitrateControlMode.Quality,
+                        EncoderProfile = H264Profile.Main
+                    }
+                },
+                AudioOptions = new AudioOptions
+                {
+                    IsAudioEnabled = settings.RecordSystemSound || settings.RecordMicrophone,
+                    IsOutputDeviceEnabled = settings.RecordSystemSound,
+                    IsInputDeviceEnabled = settings.RecordMicrophone
                 },
                 MouseOptions = new MouseOptions
                 {
