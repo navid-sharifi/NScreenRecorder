@@ -2,6 +2,9 @@ name: Build and Release
 
 on:
   push:
+    branches:
+      - main
+      - master
     tags:
       - 'v*'
   workflow_dispatch:
@@ -21,6 +24,8 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
@@ -44,14 +49,57 @@ jobs:
         run: |
           Compress-Archive -Path ./publish/* -DestinationPath ScreenRecorder-win-x64.zip
 
+      - name: Prepare Release Info
+        id: prep
+        shell: pwsh
+        run: |
+          $tagName = ""
+          $releaseName = ""
+          $prerelease = "false"
+          $isRolling = "false"
+          
+          if ("${{ github.ref }}".StartsWith("refs/tags/")) {
+            $tagName = "${{ github.ref_name }}"
+            $releaseName = "Release $tagName"
+            $prerelease = "false"
+          } elseif ("${{ github.event_name }}" -eq "workflow_dispatch" -and "${{ inputs.tag_name }}" -ne "") {
+            $tagName = "${{ inputs.tag_name }}"
+            $releaseName = "Release $tagName"
+            $prerelease = "false"
+          } elseif ("${{ github.ref_name }}" -eq "main" -or "${{ github.ref_name }}" -eq "master") {
+            $tagName = "latest"
+            $releaseName = "Latest Build"
+            $prerelease = "true"
+            $isRolling = "true"
+          } else {
+            $tagName = "${{ github.ref_name }}"
+            $releaseName = "Build from ${{ github.ref_name }}"
+            $prerelease = "true"
+          }
+          
+          "tag_name=$tagName" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          "release_name=$releaseName" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          "prerelease=$prerelease" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          "is_rolling=$isRolling" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+
+      - name: Update Rolling Tag
+        if: steps.prep.outputs.is_rolling == 'true'
+        shell: pwsh
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag -f latest
+          git push origin latest -f
+
       - name: Create Release
         uses: softprops/action-gh-release@v2
-        if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
         with:
-          tag_name: ${{ inputs.tag_name || github.ref_name }}
+          tag_name: ${{ steps.prep.outputs.tag_name }}
+          name: ${{ steps.prep.outputs.release_name }}
+          prerelease: ${{ steps.prep.outputs.prerelease == 'true' }}
           files: ScreenRecorder-win-x64.zip
           generate_release_notes: true
           draft: false
-          prerelease: false
+          make_latest: ${{ steps.prep.outputs.prerelease == 'false' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
