@@ -10,6 +10,9 @@ namespace ScreenRecorder.Models
         private string _hotkey = "Alt+S";
 
         [ObservableProperty]
+        private string _screenshotHotkey = "Alt+D";
+
+        [ObservableProperty]
         private int _fps = 30;
 
         [ObservableProperty]

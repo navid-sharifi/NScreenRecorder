@@ -13,6 +13,7 @@ public partial class MainViewModel : ViewModelBase
     private readonly SettingsService _settingsService;
     private readonly GlobalHotkeyService _hotkeyService;
     private readonly RecorderService _recorderService;
+    private readonly ScreenshotService _screenshotService = new();
 
     [ObservableProperty]
     private SettingsModel _settings;
@@ -32,7 +33,8 @@ public partial class MainViewModel : ViewModelBase
         _settings = _settingsService.CurrentSettings;
         _settings.PropertyChanged += OnSettingsPropertyChanged;
 
-        _hotkeyService.HotkeyPressed += OnHotkeyPressed;
+        _hotkeyService.RecordHotkeyPressed += OnRecordHotkeyPressed;
+        _hotkeyService.ScreenshotHotkeyPressed += OnScreenshotHotkeyPressed;
         _recorderService.RecordingStarted += (s, e) => StatusMessage = "Recording Started...";
         _recorderService.RecordingStopped += (s, e) =>
         {
@@ -98,9 +100,49 @@ public partial class MainViewModel : ViewModelBase
         }
     }
 
-    private void OnHotkeyPressed(object? sender, System.EventArgs e)
+    private void OnRecordHotkeyPressed(object? sender, System.EventArgs e)
     {
         ToggleRecording();
+    }
+
+    private void OnScreenshotHotkeyPressed(object? sender, System.EventArgs e)
+    {
+        CaptureScreenshot();
+    }
+
+    /// <summary>
+    /// Grabs the screen without showing anything, so callers can hide their own window
+    /// first and open the editor afterwards.
+    /// </summary>
+    public System.Drawing.Bitmap? CaptureScreenshotImage()
+    {
+        try
+        {
+            return _screenshotService.CaptureVirtualScreen();
+        }
+        catch (System.Exception ex)
+        {
+            StatusMessage = $"Screenshot failed: {ex.Message}";
+            return null;
+        }
+    }
+
+    public void OpenScreenshotEditor(System.Drawing.Bitmap capture)
+    {
+        var window = new ScreenshotWindow(capture, Settings.OutputPath);
+        window.Show();
+        window.Activate();
+        StatusMessage = "Screenshot captured.";
+    }
+
+    [RelayCommand]
+    public void CaptureScreenshot()
+    {
+        var capture = CaptureScreenshotImage();
+        if (capture != null)
+        {
+            OpenScreenshotEditor(capture);
+        }
     }
 
     [RelayCommand]
@@ -120,7 +162,7 @@ public partial class MainViewModel : ViewModelBase
     public void SaveSettings()
     {
         _settingsService.Save();
-        _hotkeyService.RegisterHotkey(Settings.Hotkey);
+        _hotkeyService.RegisterHotkeys(Settings.Hotkey, Settings.ScreenshotHotkey);
         ApplyStartupSetting();
     }
 }

@@ -30,7 +30,9 @@ public partial class App : Application
 
             _mainViewModel = new MainViewModel(settingsService, hotkeyService, recorderService);
             
-            hotkeyService.RegisterHotkey(settingsService.CurrentSettings.Hotkey);
+            hotkeyService.RegisterHotkeys(
+                settingsService.CurrentSettings.Hotkey,
+                settingsService.CurrentSettings.ScreenshotHotkey);
 
             recorderService.RecordingStarted += OnRecordingStarted;
             recorderService.RecordingStopped += OnRecordingStopped;

@@ -1,0 +1,64 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="ScreenRecorder.Views.ScreenshotWindow"
+        Title="Screenshot"
+        Width="1100" Height="750"
+        MinWidth="620" MinHeight="420"
+        WindowState="Maximized"
+        WindowStartupLocation="CenterScreen"
+        RequestedThemeVariant="Dark"
+        Background="#1E1E1E"
+        Icon="/Assets/avalonia-logo.ico">
+
+    <DockPanel>
+        <!-- Toolbar -->
+        <Border DockPanel.Dock="Top"
+                Background="#252526"
+                BorderBrush="#3F3F46"
+                BorderThickness="0,0,0,1"
+                Padding="12,10">
+            <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                <Button x:Name="CropButton" Content="Crop to Selection" Click="OnCropClick" IsEnabled="False" />
+                <Button x:Name="ResetButton" Content="Reset" Click="OnResetClick" IsEnabled="False" />
+                <Border Width="1" Background="#3F3F46" Margin="4,2" />
+                <Button x:Name="CopyButton" Content="Copy" Click="OnCopyClick" />
+                <Button x:Name="SaveAsButton" Content="Save As..." Click="OnSaveAsClick" />
+                <Border Width="1" Background="#3F3F46" Margin="4,2" />
+                <Button Content="Close" Click="OnCloseClick" />
+                <TextBlock x:Name="StatusText"
+                           VerticalAlignment="Center"
+                           Margin="12,0,0,0"
+                           Foreground="#4EC9B0"
+                           TextTrimming="CharacterEllipsis" />
+            </StackPanel>
+        </Border>
+
+        <!-- Info bar -->
+        <Border DockPanel.Dock="Bottom"
+                Background="#252526"
+                BorderBrush="#3F3F46"
+                BorderThickness="0,1,0,0"
+                Padding="12,6">
+            <TextBlock x:Name="InfoText" Foreground="#A0A0A0" FontSize="12" />
+        </Border>
+
+        <!-- Preview + crop overlay -->
+        <Grid x:Name="ImageHost" Margin="16">
+            <Image x:Name="PreviewImage"
+                   Stretch="Uniform"
+                   RenderOptions.BitmapInterpolationMode="HighQuality" />
+            <Canvas x:Name="OverlayCanvas"
+                    Background="Transparent"
+                    Cursor="Cross"
+                    PointerPressed="OnPointerPressed"
+                    PointerMoved="OnPointerMoved"
+                    PointerReleased="OnPointerReleased">
+                <Rectangle x:Name="SelectionRectangle"
+                           Stroke="#0078D4"
+                           StrokeThickness="2"
+                           Fill="#300078D4"
+                           IsVisible="False" />
+            </Canvas>
+        </Grid>
+    </DockPanel>
+</Window>
