@@ -34,13 +34,14 @@ jobs:
           include-prerelease: true
 
       - name: Restore Dependencies
-        run: dotnet restore ScreenRecorder.csproj
+        run: dotnet restore ScreenRecorder.csproj -p:Platform=x64
 
       - name: Publish Application
         run: |
           dotnet publish ScreenRecorder.csproj `
             -c Release `
             -r win-x64 `
+            -p:Platform=x64 `
             --self-contained true `
             -o ./publish
 
