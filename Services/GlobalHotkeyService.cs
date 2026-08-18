@@ -1,3 +1,4 @@
+#if WINDOWS
 using System;
 using System.Runtime.InteropServices;
 using System.Threading;
@@ -242,3 +243,25 @@ namespace ScreenRecorder.Services
         }
     }
 }
+#else
+using System;
+
+namespace ScreenRecorder.Services
+{
+    public class GlobalHotkeyService
+    {
+        public event EventHandler? RecordHotkeyPressed;
+        public event EventHandler? ScreenshotHotkeyPressed;
+        public event EventHandler? VoiceRecordHotkeyPressed;
+
+        public void RegisterHotkeys(string recordHotkey, string screenshotHotkey, string voiceRecordHotkey)
+        {
+            // Global hotkeys are not supported on non-Windows platforms
+        }
+
+        public void Unregister()
+        {
+        }
+    }
+}
+#endif

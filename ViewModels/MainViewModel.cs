@@ -6,6 +6,12 @@ using ScreenRecorder.Models;
 using ScreenRecorder.Services;
 using ScreenRecorder.Views;
 
+#if WINDOWS
+using CaptureImage = System.Drawing.Bitmap;
+#else
+using CaptureImage = Avalonia.Media.Imaging.Bitmap;
+#endif
+
 namespace ScreenRecorder.ViewModels;
 
 public partial class MainViewModel : ViewModelBase
@@ -94,6 +100,7 @@ public partial class MainViewModel : ViewModelBase
 
     private void ApplyStartupSetting()
     {
+#if WINDOWS
         if (System.OperatingSystem.IsWindows())
         {
             try
@@ -120,6 +127,7 @@ public partial class MainViewModel : ViewModelBase
                 StatusMessage = $"Startup registry update failed: {ex.Message}";
             }
         }
+#endif
     }
 
     private void OnRecordHotkeyPressed(object? sender, System.EventArgs e)
@@ -141,7 +149,7 @@ public partial class MainViewModel : ViewModelBase
     /// Grabs the screen without showing anything, so callers can hide their own window
     /// first and open the editor afterwards.
     /// </summary>
-    public System.Drawing.Bitmap? CaptureScreenshotImage()
+    public CaptureImage? CaptureScreenshotImage()
     {
         try
         {
@@ -154,7 +162,7 @@ public partial class MainViewModel : ViewModelBase
         }
     }
 
-    public void OpenScreenshotEditor(System.Drawing.Bitmap capture)
+    public void OpenScreenshotEditor(CaptureImage capture)
     {
         var window = new ScreenshotWindow(capture, Settings.OutputPath);
         window.Show();

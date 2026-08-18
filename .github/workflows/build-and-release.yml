@@ -19,7 +19,10 @@ permissions:
 
 jobs:
   build:
-    runs-on: windows-latest
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [windows-latest, macos-latest]
 
     steps:
       - name: Checkout Code
@@ -33,10 +36,13 @@ jobs:
           dotnet-version: '10.0.x'
           include-prerelease: true
 
-      - name: Restore Dependencies
+      # --- WINDOWS ONLY BUILD ---
+      - name: Restore Dependencies (Windows)
+        if: matrix.os == 'windows-latest'
         run: dotnet restore ScreenRecorder.csproj -p:Platform=x64
 
-      - name: Publish Application
+      - name: Publish Application (Windows)
+        if: matrix.os == 'windows-latest'
         run: |
           dotnet publish ScreenRecorder.csproj `
             -c Release `
@@ -46,60 +52,160 @@ jobs:
             -o ./publish
 
       - name: Install Inno Setup
+        if: matrix.os == 'windows-latest'
         run: choco install innosetup -y
 
       - name: Compile Windows Installer
+        if: matrix.os == 'windows-latest'
         run: iscc setup.iss
 
+      # --- MACOS ONLY BUILD ---
+      - name: Restore Dependencies (macOS)
+        if: matrix.os == 'macos-latest'
+        run: dotnet restore ScreenRecorder.csproj
+
+      - name: Publish Application (macOS ARM64)
+        if: matrix.os == 'macos-latest'
+        run: |
+          dotnet publish ScreenRecorder.csproj \
+            -c Release \
+            -f net10.0 \
+            -r osx-arm64 \
+            --self-contained true \
+            -o ./publish-osx-arm64
+
+      - name: Publish Application (macOS x64)
+        if: matrix.os == 'macos-latest'
+        run: |
+          dotnet publish ScreenRecorder.csproj \
+            -c Release \
+            -f net10.0 \
+            -r osx-x64 \
+            --self-contained true \
+            -o ./publish-osx-x64
+
+      - name: Package macOS Applications
+        if: matrix.os == 'macos-latest'
+        run: |
+          # Create Info.plist template
+          cat << 'EOF' > Info.plist
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+              <key>CFBundleDevelopmentRegion</key>
+              <string>English</string>
+              <key>CFBundleExecutable</key>
+              <string>ScreenRecorder</string>
+              <key>CFBundleIdentifier</key>
+              <string>com.nscreenrecorder.app</string>
+              <key>CFBundleInfoDictionaryVersion</key>
+              <string>6.0</string>
+              <key>CFBundleName</key>
+              <string>NScreenRecorder</string>
+              <key>CFBundlePackageType</key>
+              <string>APPL</string>
+              <key>CFBundleShortVersionString</key>
+              <string>1.0.0</string>
+              <key>CFBundleSignature</key>
+              <string>????</string>
+              <key>CFBundleVersion</key>
+              <string>1.0.0</string>
+              <key>LSMinimumSystemVersion</key>
+              <string>10.15</string>
+              <key>NSPrincipalClass</key>
+              <string>NSApplication</string>
+              <key>NSHighResolutionCapable</key>
+              <true/>
+          </dict>
+          </plist>
+          EOF
+
+          # Package ARM64
+          mkdir -p NScreenRecorder.app/Contents/MacOS
+          mkdir -p NScreenRecorder.app/Contents/Resources
+          cp -r ./publish-osx-arm64/* NScreenRecorder.app/Contents/MacOS/
+          cp Info.plist NScreenRecorder.app/Contents/
+          chmod +x NScreenRecorder.app/Contents/MacOS/ScreenRecorder
+          zip -r NScreenRecorder-macOS-arm64.zip NScreenRecorder.app
+          rm -rf NScreenRecorder.app
+
+          # Package x64
+          mkdir -p NScreenRecorder.app/Contents/MacOS
+          mkdir -p NScreenRecorder.app/Contents/Resources
+          cp -r ./publish-osx-x64/* NScreenRecorder.app/Contents/MacOS/
+          cp Info.plist NScreenRecorder.app/Contents/
+          chmod +x NScreenRecorder.app/Contents/MacOS/ScreenRecorder
+          zip -r NScreenRecorder-macOS-x64.zip NScreenRecorder.app
+          rm -rf NScreenRecorder.app
+
+      # --- RELEASE PREPARATION AND PUBLISHING ---
       - name: Prepare Release Info
         id: prep
-        shell: pwsh
+        shell: bash
         run: |
-          $tagName = ""
-          $releaseName = ""
-          $prerelease = "false"
-          $isRolling = "false"
+          tagName=""
+          releaseName=""
+          prerelease="false"
+          isRolling="false"
           
-          if ("${{ github.ref }}".StartsWith("refs/tags/")) {
-            $tagName = "${{ github.ref_name }}"
-            $releaseName = "Release $tagName"
-            $prerelease = "false"
-          } elseif ("${{ github.event_name }}" -eq "workflow_dispatch" -and "${{ inputs.tag_name }}" -ne "") {
-            $tagName = "${{ inputs.tag_name }}"
-            $releaseName = "Release $tagName"
-            $prerelease = "false"
-          } elseif ("${{ github.ref_name }}" -eq "main" -or "${{ github.ref_name }}" -eq "master") {
-            $tagName = "latest"
-            $releaseName = "Latest Build"
-            $prerelease = "true"
-            $isRolling = "true"
-          } else {
-            $tagName = "${{ github.ref_name }}"
-            $releaseName = "Build from ${{ github.ref_name }}"
-            $prerelease = "true"
-          }
+          if [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            tagName="${{ github.ref_name }}"
+            releaseName="Release $tagName"
+            prerelease="false"
+          elif [[ "${{ github.event_name }}" == "workflow_dispatch" && "${{ inputs.tag_name }}" != "" ]]; then
+            tagName="${{ inputs.tag_name }}"
+            releaseName="Release $tagName"
+            prerelease="false"
+          elif [[ "${{ github.ref_name }}" == "main" || "${{ github.ref_name }}" == "master" ]]; then
+            tagName="latest"
+            releaseName="Latest Build"
+            prerelease="true"
+            isRolling="true"
+          else
+            tagName="${{ github.ref_name }}"
+            releaseName="Build from ${{ github.ref_name }}"
+            prerelease="true"
+          fi
           
-          "tag_name=$tagName" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
-          "release_name=$releaseName" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
-          "prerelease=$prerelease" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
-          "is_rolling=$isRolling" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          echo "tag_name=$tagName" >> $GITHUB_OUTPUT
+          echo "release_name=$releaseName" >> $GITHUB_OUTPUT
+          echo "prerelease=$prerelease" >> $GITHUB_OUTPUT
+          echo "is_rolling=$isRolling" >> $GITHUB_OUTPUT
 
       - name: Update Rolling Tag
         if: steps.prep.outputs.is_rolling == 'true'
-        shell: pwsh
+        shell: bash
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git tag -f latest
-          git push origin latest -f
+          git push origin latest -f || true
 
-      - name: Create Release
+      - name: Create Release (Windows)
+        if: matrix.os == 'windows-latest'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.prep.outputs.tag_name }}
           name: ${{ steps.prep.outputs.release_name }}
           prerelease: ${{ steps.prep.outputs.prerelease == 'true' }}
           files: ScreenRecorderSetup.exe
+          generate_release_notes: true
+          draft: false
+          make_latest: ${{ steps.prep.outputs.prerelease == 'false' }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create Release (macOS)
+        if: matrix.os == 'macos-latest'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.prep.outputs.tag_name }}
+          name: ${{ steps.prep.outputs.release_name }}
+          prerelease: ${{ steps.prep.outputs.prerelease == 'true' }}
+          files: |
+            NScreenRecorder-macOS-arm64.zip
+            NScreenRecorder-macOS-x64.zip
           generate_release_notes: true
           draft: false
           make_latest: ${{ steps.prep.outputs.prerelease == 'false' }}

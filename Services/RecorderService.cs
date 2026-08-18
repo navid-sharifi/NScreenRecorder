@@ -1,3 +1,4 @@
+#if WINDOWS
 using System;
 using System.IO;
 using ScreenRecorderLib;
@@ -125,3 +126,58 @@ namespace ScreenRecorder.Services
         }
     }
 }
+#else
+using System;
+using System.IO;
+using ScreenRecorder.Models;
+
+namespace ScreenRecorder.Services
+{
+    public class RecorderService
+    {
+        public bool IsRecording { get; private set; }
+        public string? LastRecordedFilePath { get; private set; }
+
+        public event EventHandler? RecordingStarted;
+        public event EventHandler? RecordingStopped;
+        public event EventHandler<string>? RecordingFailed;
+
+        public void StartRecording(SettingsModel settings, bool isAudioOnly = false)
+        {
+            if (IsRecording) return;
+
+            string extension = settings.VoiceFormat == 0 ? "mp4" : "m4a";
+            string fileName = isAudioOnly 
+                ? $"VoiceRecord_{DateTime.Now:yyyyMMdd_HHmmss}.{extension}"
+                : $"Record_{DateTime.Now:yyyyMMdd_HHmmss}.mp4";
+            string filePath = Path.Combine(settings.OutputPath, fileName);
+            LastRecordedFilePath = filePath;
+
+            if (!Directory.Exists(settings.OutputPath))
+            {
+                Directory.CreateDirectory(settings.OutputPath);
+            }
+
+            IsRecording = true;
+            RecordingStarted?.Invoke(this, EventArgs.Empty);
+        }
+
+        public void StopRecording()
+        {
+            if (!IsRecording) return;
+
+            if (!string.IsNullOrEmpty(LastRecordedFilePath))
+            {
+                try
+                {
+                    File.WriteAllText(LastRecordedFilePath, "NScreenRecorder macOS Mock Recording Content");
+                }
+                catch {}
+            }
+
+            IsRecording = false;
+            RecordingStopped?.Invoke(this, EventArgs.Empty);
+        }
+    }
+}
+#endif

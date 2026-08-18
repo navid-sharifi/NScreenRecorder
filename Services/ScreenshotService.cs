@@ -1,3 +1,4 @@
+#if WINDOWS
 using System;
 using System.Drawing;
 using GdiBitmap = System.Drawing.Bitmap;
@@ -380,3 +381,135 @@ namespace ScreenRecorder.Services
         }
     }
 }
+#else
+using System;
+using System.IO;
+using Avalonia;
+using Avalonia.Input.Platform;
+using Avalonia.Media.Imaging;
+using Avalonia.Platform;
+
+namespace ScreenRecorder.Services
+{
+    public class ScreenshotService
+    {
+        public Bitmap CaptureVirtualScreen()
+        {
+            string tempFile = Path.Combine(Path.GetTempPath(), $"screenshot_{Guid.NewGuid()}.png");
+            try
+            {
+                if (System.OperatingSystem.IsMacOS())
+                {
+                    using var process = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                    {
+                        FileName = "/usr/sbin/screencapture",
+                        Arguments = $"-x \"{tempFile}\"",
+                        UseShellExecute = false,
+                        CreateNoWindow = true
+                    });
+                    process?.WaitForExit();
+                }
+
+                if (File.Exists(tempFile))
+                {
+                    var bitmap = new Bitmap(tempFile);
+                    try { File.Delete(tempFile); } catch {}
+                    return bitmap;
+                }
+                
+                return CreateBlankBitmap(800, 600);
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Screen capture failed: {ex.Message}", ex);
+            }
+        }
+
+        private Bitmap CreateBlankBitmap(int width, int height)
+        {
+            var target = new WriteableBitmap(
+                new PixelSize(width, height),
+                new Vector(96, 96),
+                PixelFormat.Bgra8888,
+                AlphaFormat.Opaque);
+            return target;
+        }
+
+        public Bitmap Crop(Bitmap source, System.Drawing.Rectangle region)
+        {
+            int width = Math.Min(region.Width, (int)source.Size.Width - region.X);
+            int height = Math.Min(region.Height, (int)source.Size.Height - region.Y);
+
+            if (width <= 0 || height <= 0)
+            {
+                throw new ArgumentException("The crop region is outside of the image.");
+            }
+
+            var cropped = new RenderTargetBitmap(new PixelSize(width, height), new Vector(96, 96));
+            using (var ctx = cropped.CreateDrawingContext())
+            {
+                ctx.DrawImage(source, 
+                    new Rect(region.X, region.Y, width, height), 
+                    new Rect(0, 0, width, height));
+            }
+
+            using (var ms = new MemoryStream())
+            {
+                cropped.Save(ms);
+                ms.Position = 0;
+                return new Bitmap(ms);
+            }
+        }
+
+        public WriteableBitmap ToAvaloniaBitmap(Bitmap source)
+        {
+            var rt = new RenderTargetBitmap(new PixelSize((int)source.Size.Width, (int)source.Size.Height), new Vector(96, 96));
+            using (var ctx = rt.CreateDrawingContext())
+            {
+                ctx.DrawImage(source, new Rect(0, 0, source.Size.Width, source.Size.Height), new Rect(0, 0, source.Size.Width, source.Size.Height));
+            }
+            using (var ms = new MemoryStream())
+            {
+                rt.Save(ms);
+                ms.Position = 0;
+                return WriteableBitmap.Decode(ms);
+            }
+        }
+
+        public void CopyToClipboard(Bitmap source, IntPtr ownerWindow)
+        {
+            Avalonia.Threading.Dispatcher.UIThread.Post(async () =>
+            {
+                try
+                {
+                    if (Application.Current?.ApplicationLifetime is Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop)
+                    {
+                        var mainWindow = desktop.MainWindow;
+                        if (mainWindow != null)
+                        {
+                            var clipboard = mainWindow.Clipboard;
+                            if (clipboard != null)
+                            {
+                                await clipboard.SetBitmapAsync(source);
+                            }
+                        }
+                    }
+                }
+                catch {}
+            });
+        }
+
+        public void Save(Bitmap source, string path)
+        {
+            var directory = Path.GetDirectoryName(path);
+            if (!string.IsNullOrEmpty(directory))
+            {
+                Directory.CreateDirectory(directory);
+            }
+            source.Save(path);
+        }
+
+        public static string BuildDefaultFileName() => $"Screenshot_{DateTime.Now:yyyyMMdd_HHmmss}.png";
+    }
+}
+#endif

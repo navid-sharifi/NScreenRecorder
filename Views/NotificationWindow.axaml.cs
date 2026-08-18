@@ -79,12 +79,31 @@ namespace ScreenRecorder.Views
 
             try
             {
-                // To open folder and select/focus the file
-                Process.Start("explorer.exe", $"/select,\"{_filePath}\"");
+                if (System.OperatingSystem.IsWindows())
+                {
+                    Process.Start("explorer.exe", $"/select,\"{_filePath}\"");
+                }
+                else if (System.OperatingSystem.IsMacOS())
+                {
+                    Process.Start("open", $"-R \"{_filePath}\"");
+                }
+                else
+                {
+                    var directory = Path.GetDirectoryName(_filePath);
+                    if (!string.IsNullOrEmpty(directory))
+                    {
+                        Process.Start(new ProcessStartInfo
+                        {
+                            FileName = "xdg-open",
+                            Arguments = $"\"{directory}\"",
+                            UseShellExecute = true
+                        });
+                    }
+                }
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"Failed to open explorer: {ex.Message}");
+                Debug.WriteLine($"Failed to open folder: {ex.Message}");
             }
         }
     }
